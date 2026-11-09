@@ -305,7 +305,26 @@ button,input{font:inherit}
   color:#fff;
 }
 .choice-card{padding:26px 18px;border: 2px solid #ffc107 !important;cursor:pointer;transition:.18s;height:100%}.choice-card:hover{transform:translateY(-2px);border-color:#fff;box-shadow:0 12px 28px rgba(255, 193, 7, 0.2)}.choice-icon{font-size:34px;color:var(--gold)}
-.btn-gold{background:var(--gold);color:#121212;border:1px solid var(--gold);font-weight:700;border-radius:13px;padding:11px 18px}.btn-gold:hover{background:#e0a800;color:#000}.btn-outline-gold{border:1px solid var(--gold);color:var(--gold);border-radius:12px;font-weight:650;background:rgba(0,0,0,0.3)}.btn-outline-gold:hover,.btn-outline-gold.active{background:var(--gold);color:#121212}.form-control,.form-select{border-radius:12px;padding:12px;border-color:var(--gold);background:#1e1e1e;color:#fff}.form-control:focus,.form-select:focus{background:#222;color:#fff;border-color:var(--gold);box-shadow:0 0 8px rgba(255,193,7,0.4)}
+.btn-gold{background:var(--gold);color:#121212;border:1px solid var(--gold);font-weight:700;border-radius:13px;padding:11px 18px}.btn-gold:hover{background:#e0a800;color:#000}.btn-outline-gold{border:1px solid var(--gold);color:var(--gold);border-radius:12px;font-weight:650;background:rgba(0,0,0,0.3)}.btn-outline-gold:hover,.btn-outline-gold.active{background:var(--gold);color:#121212}
+.form-control, .form-select {
+  border-radius: 12px;
+  padding: 12px;
+  border-color: var(--gold) !important;
+  background-color: #1e1e1e !important;
+  color: #ffffff !important;
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: #222222 !important;
+  color: #ffffff !important;
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 8px rgba(255, 193, 7, 0.4) !important;
+}
+
+.form-control::placeholder {
+  color: #b0b0b0 !important;
+  opacity: 1;
+}
 
 /* Category Strip */
 .category-strip {
@@ -583,7 +602,7 @@ button,input{font:inherit}
 <header class="topbar">
   <div class="container d-flex align-items-center justify-content-between gap-3">
     <div class="d-flex align-items-center gap-3">
-      <div class="brandmark"><img src="logo.png" alt="Sairene Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
+      <div class="brandmark"><img src="img/logo.png" alt="Sairene Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
       <div>
         <div class="brandname">Sairene Tephteph Tapsilogan</div>
         <div class="small muted">Hot silogs, made your way</div>
@@ -594,7 +613,7 @@ button,input{font:inherit}
 <main class="container py-3 py-md-4">
 <section id="screen-welcome" class="screen active">
   <div class="hero">
-    <div class="hero-plate"><img src="logo.png" alt="Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
+    <div class="hero-plate"><img src="img/logo.png" alt="Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
     <h1 class="h-title mt-3" style="font-size: clamp(1.8rem, 3.5vw, 2.3rem);">Kain na, tara!</h1>
     <p class="muted mb-0">Welcome to Sairene Tephteph Tapsilogan. What sounds good today?</p>
   </div>
@@ -608,7 +627,7 @@ button,input{font:inherit}
 <section id="screen-reorder" class="screen"><button class="btn btn-link px-0 text-warning text-decoration-none mb-2" onclick="goBackFromReorder()"><i class="bi bi-arrow-left me-1"></i>Back</button><div class="panel p-4 p-md-5 mx-auto text-center" style="max-width:650px"><div class="choice-icon mb-3"><i class="bi bi-arrow-repeat"></i></div><h1 class="h-title h2">Skip the hassle and reorder?</h1><p class="muted">Back for another round? If you saved an order with us before, we can bring it back so you don't have to pick everything all over again.</p><div class="text-start mt-4"><label class="form-label fw-semibold text-warning" for="reorderDigits">Last four digits of your saved phone number</label><input id="reorderDigits" class="form-control form-control-lg" inputmode="numeric" maxlength="4" placeholder="e.g. 1234"></div><button class="btn btn-gold w-100 mt-3" onclick="findReorder()">Find My Last Order</button><button class="btn btn-outline-gold w-100 mt-2" onclick="startFresh()">No Thanks, Start Fresh</button><div id="reorderResult" class="mt-3"></div></div></section>
 <section id="screen-menu" class="screen">
   <div class="menu-banner">
-    <div class="banner-brandmark"><img src="logo.png" alt="Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
+    <div class="banner-brandmark"><img src="img/logo.png" alt="Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
     <div class="banner-copy text-center"><div class="banner-eyebrow">MADE FRESH FOR YOU</div><h1 class="text-center w-100">Kain na, ka-silog!</h1><p class="text-center">Pick your cravings, customize your plate, and we'll take care of the rest!</p></div>
     <div class="banner-budget-wrap">
       <button type="button" class="banner-budget" onclick="openBudget()" id="budgetMenuButton"><i class="bi bi-wallet2"></i><span id="budgetMenuLabel">Your Budget</span></button>
@@ -801,8 +820,29 @@ button,input{font:inherit}
     });
   };
 
-  const productImages = {
-    'tapsilog':'tapsilog.png','bagnetsilog':'bagnetsilog.png','sisigsilog':'sisigsilog.png','liemposilog':'liemposilog.png','malingsilog':'malingsilog.png','tocilog':'tocilog.png','hungariansilog':'hungariansilog.png','hotdogsilog':'hotsilog.png','bagnet-hungarian':'bagnet_hungarian.png','tapa-hungarian':'tapa_hungarian.png','tapa-bagnet':'tapa_bagnetsilog.png','liempo-hungarian':'liempo_hungarian.png','sisig-hungarian':'sisig_hungarian.png','tapa-portion':'special_tapa.png','bagnet-portion':'special_bagnet.png','sisig-portion':'special_sisig.png','hungarian-portion':'hungarian.png','garlic-rice':'garlic_rice.png','plain-rice':'plain_rice.png','extra-egg':'egg.png'
+
+
+const productImages = {
+    'tapsilog': 'img/special_tapa.png',      // Fixed to match special_tapa.png in your images folder
+    'bagnetsilog': 'img/bagnetsilog.png',
+    'sisigsilog': 'img/sisigsilog.png',
+    'liemposilog': 'img/liemposilog.png',
+    'malingsilog': 'img/malingsilog.png',
+    'tocilog': 'img/special_tapa.png',       // Fallback to special_tapa.png until tocilog.png is added
+    'hungariansilog': 'img/hungariansilog.png',
+    'hotdogsilog': 'img/hotsilog.png',
+    'bagnet-hungarian': 'img/bagnet_hungarian.png',
+    'tapa-hungarian': 'img/tapa_hungarian.png',
+    'tapa-bagnet': 'img/tapa_bagnetsilog.png',
+    'liempo-hungarian': 'img/liempo_hungarian.png',
+    'sisig-hungarian': 'img/sisig_hungarian.png',
+    'tapa-portion': 'img/special_tapa.png',
+    'bagnet-portion': 'img/special_bagnet.png',
+    'sisig-portion': 'img/special_sisig.png',
+    'hungarian-portion': 'img/hungarian.png',
+    'garlic-rice': 'img/garlic_rice.png',
+    'plain-rice': 'img/plain_rice.png',
+    'extra-egg': 'img/egg.png'
   };
 
   function renderMenu() {
@@ -810,7 +850,10 @@ button,input{font:inherit}
     $('menuList').innerHTML = arr.map(p => {
       const count = cart.filter(c => c.id === p.id).reduce((s, c) => s + c.qty, 0);
       const image = productImages[p.id];
-      const art = image ? `<div class="food-art"><img class="food-photo" src="${encodeURIComponent(image)}" alt="${p.name}" loading="lazy" onerror="this.remove();this.parentElement.innerHTML='<i class=\\&quot;bi ${p.icon}\\&quot;></i>'"></div>` : `<div class="food-art"><i class="bi ${p.icon}"></i></div>`;
+      // REMOVED encodeURIComponent so the slashes remain valid URL paths
+      const art = image 
+        ? `<div class="food-art"><img class="food-photo" src="${image}" alt="${p.name}" loading="lazy" onerror="this.src='images/egg.png'"></div>` 
+        : `<div class="food-art"><i class="bi ${p.icon}"></i></div>`;
       return `<article class="food-row">${art}<div class="food-info" onclick="openCustomize('${p.id}')" role="button" tabindex="0"><h3>${p.name}</h3><p class="food-desc">${p.desc}</p><div class="price">${money(p.price)}</div></div><div class="quantity">${count ? `<button class="qty-btn" aria-label="Decrease ${p.name}" onclick="menuQty('${p.id}',-1)">−</button><span class="qty-num">${count}</span><button class="qty-btn" aria-label="Increase ${p.name}" onclick="menuQty('${p.id}',1)">+</button>` : `<button class="btn btn-outline-gold" onclick="openCustomize('${p.id}')">Add</button>`}</div></article>`;
     }).join('') || '<div class="panel p-4 text-center muted">No items in this category.</div>';
   }
