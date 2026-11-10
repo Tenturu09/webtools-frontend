@@ -8,6 +8,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Include standalone database connection configuration
     require_once __DIR__ . '/config/db.php';
 
+    // Auto-patch: Add queue_number column automatically if missing in database
+    try {
+        $pdo->exec("ALTER TABLE kiosk_orders ADD COLUMN queue_number VARCHAR(20) NOT NULL AFTER id");
+    } catch (Exception $e) {
+        // Column already exists or error ignored
+    }
+
     try {
         $input = json_decode(file_get_contents('php://input'), true);
         if (!$input) {
@@ -602,7 +609,7 @@ button,input{font:inherit}
 <header class="topbar">
   <div class="container d-flex align-items-center justify-content-between gap-3">
     <div class="d-flex align-items-center gap-3">
-      <div class="brandmark"><img src="img/logo.png" alt="Sairene Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
+      <div class="brandmark"><img src="img/Logo.png" alt="Sairene Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
       <div>
         <div class="brandname">Sairene Tephteph Tapsilogan</div>
         <div class="small muted">Hot silogs, made your way</div>
@@ -613,7 +620,7 @@ button,input{font:inherit}
 <main class="container py-3 py-md-4">
 <section id="screen-welcome" class="screen active">
   <div class="hero">
-    <div class="hero-plate"><img src="img/logo.png" alt="Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
+    <div class="hero-plate"><img src="img/Logo.png" alt="Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
     <h1 class="h-title mt-3" style="font-size: clamp(1.8rem, 3.5vw, 2.3rem);">Kain na, tara!</h1>
     <p class="muted mb-0">Welcome to Sairene Tephteph Tapsilogan. What sounds good today?</p>
   </div>
@@ -627,7 +634,7 @@ button,input{font:inherit}
 <section id="screen-reorder" class="screen"><button class="btn btn-link px-0 text-warning text-decoration-none mb-2" onclick="goBackFromReorder()"><i class="bi bi-arrow-left me-1"></i>Back</button><div class="panel p-4 p-md-5 mx-auto text-center" style="max-width:650px"><div class="choice-icon mb-3"><i class="bi bi-arrow-repeat"></i></div><h1 class="h-title h2">Skip the hassle and reorder?</h1><p class="muted">Back for another round? If you saved an order with us before, we can bring it back so you don't have to pick everything all over again.</p><div class="text-start mt-4"><label class="form-label fw-semibold text-warning" for="reorderDigits">Last four digits of your saved phone number</label><input id="reorderDigits" class="form-control form-control-lg" inputmode="numeric" maxlength="4" placeholder="e.g. 1234"></div><button class="btn btn-gold w-100 mt-3" onclick="findReorder()">Find My Last Order</button><button class="btn btn-outline-gold w-100 mt-2" onclick="startFresh()">No Thanks, Start Fresh</button><div id="reorderResult" class="mt-3"></div></div></section>
 <section id="screen-menu" class="screen">
   <div class="menu-banner">
-    <div class="banner-brandmark"><img src="img/logo.png" alt="Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
+    <div class="banner-brandmark"><img src="img/Logo.png" alt="Logo" onerror="this.remove();this.parentElement.innerHTML='<i class=\'bi bi-egg-fried\'></i>'"></div>
     <div class="banner-copy text-center"><div class="banner-eyebrow">MADE FRESH FOR YOU</div><h1 class="text-center w-100">Kain na, ka-silog!</h1><p class="text-center">Pick your cravings, customize your plate, and we'll take care of the rest!</p></div>
     <div class="banner-budget-wrap">
       <button type="button" class="banner-budget" onclick="openBudget()" id="budgetMenuButton"><i class="bi bi-wallet2"></i><span id="budgetMenuLabel">Your Budget</span></button>
@@ -687,7 +694,7 @@ button,input{font:inherit}
 
   const products = [
     { id: 'tapsilog', name: 'Tapsilog', desc: 'Sweet-savory marinated beef tapa served with garlic rice and a sunny egg.', price: 90, cat: 'solo', icon: 'bi-egg-fried', fame: true, protein: 'tapa' },
-    { id: 'bagnetsilog', name: 'Bagnetsilog', desc: 'Crunchy, golden bagnet paired with garlic rice and a sunny egg.', price: 90, cat: 'solo', icon: 'bi-fire', fame: true, protein: 'bagnet' },
+    { id: 'bagnetsilog', name: 'Bagnet Silog', desc: 'Crunchy, golden bagnet paired with garlic rice and a sunny egg.', price: 90, cat: 'solo', icon: 'bi-fire', fame: true, protein: 'bagnet' },
     { id: 'sisigsilog', name: 'Sisigsilog', desc: 'Sizzling, savory sisig served with garlic rice and a sunny egg.', price: 90, cat: 'solo', icon: 'bi-egg-fried', fame: true, protein: 'sisig' },
     { id: 'liemposilog', name: 'Liemposilog', desc: 'Juicy grilled pork liempo with garlic rice and a sunny egg.', price: 90, cat: 'solo', icon: 'bi-fire', fame: true, protein: 'liempo' },
     { id: 'malingsilog', name: 'Malingsilog', desc: 'A nostalgic luncheon-meat favorite with garlic rice and a sunny egg.', price: 90, cat: 'solo', icon: 'bi-egg-fried', protein: 'maling' },
@@ -820,29 +827,27 @@ button,input{font:inherit}
     });
   };
 
-
-
-const productImages = {
-    'tapsilog': 'img/special_tapa.png',      // Fixed to match special_tapa.png in your images folder
-    'bagnetsilog': 'img/bagnetsilog.png',
-    'sisigsilog': 'img/sisigsilog.png',
-    'liemposilog': 'img/liemposilog.png',
-    'malingsilog': 'img/malingsilog.png',
-    'tocilog': 'img/special_tapa.png',       // Fallback to special_tapa.png until tocilog.png is added
-    'hungariansilog': 'img/hungariansilog.png',
-    'hotdogsilog': 'img/hotsilog.png',
-    'bagnet-hungarian': 'img/bagnet_hungarian.png',
-    'tapa-hungarian': 'img/tapa_hungarian.png',
-    'tapa-bagnet': 'img/tapa_bagnetsilog.png',
-    'liempo-hungarian': 'img/liempo_hungarian.png',
-    'sisig-hungarian': 'img/sisig_hungarian.png',
-    'tapa-portion': 'img/special_tapa.png',
-    'bagnet-portion': 'img/special_bagnet.png',
-    'sisig-portion': 'img/special_sisig.png',
-    'hungarian-portion': 'img/hungarian.png',
-    'garlic-rice': 'img/garlic_rice.png',
-    'plain-rice': 'img/plain_rice.png',
-    'extra-egg': 'img/egg.png'
+  const productImages = {
+    'tapsilog': 'img/Tapsilog.jpg',
+    'bagnetsilog': 'img/Bagnet Silog.jpg',
+    'sisigsilog': 'img/sisig silog.jpg',
+    'liemposilog': 'img/porkchop silog.jpg',
+    'malingsilog': 'img/maling silog.jpg',
+    'tocilog': 'img/TociLog.jpg',
+    'hungariansilog': 'img/Hungarian Bagnet.jpg',
+    'hotdogsilog': 'img/Hotsilog.jpg',
+    'bagnet-hungarian': 'img/Hungarian Bagnet.jpg',
+    'tapa-hungarian': 'img/Hungarian Tapa.jpg',
+    'tapa-bagnet': 'img/Bagnet.jpg',
+    'liempo-hungarian': 'img/Hungarian Bagnet.jpg',
+    'sisig-hungarian': 'img/Hungarian sisig.jpg',
+    'tapa-portion': 'img/Tapsilog.jpg',
+    'bagnet-portion': 'img/Bagnet.jpg',
+    'sisig-portion': 'img/sisig silog.jpg',
+    'hungarian-portion': 'img/Hungarian Tapa.jpg',
+    'garlic-rice': 'img/Garlic Rice.jpg',
+    'plain-rice': 'img/plain rice.jpg',
+    'extra-egg': ''
   };
 
   function renderMenu() {
@@ -850,9 +855,8 @@ const productImages = {
     $('menuList').innerHTML = arr.map(p => {
       const count = cart.filter(c => c.id === p.id).reduce((s, c) => s + c.qty, 0);
       const image = productImages[p.id];
-      // REMOVED encodeURIComponent so the slashes remain valid URL paths
       const art = image 
-        ? `<div class="food-art"><img class="food-photo" src="${image}" alt="${p.name}" loading="lazy" onerror="this.src='images/egg.png'"></div>` 
+        ? `<div class="food-art"><img class="food-photo" src="${image}" alt="${p.name}" loading="lazy" onerror="this.src='img/Logo.png'"></div>` 
         : `<div class="food-art"><i class="bi ${p.icon}"></i></div>`;
       return `<article class="food-row">${art}<div class="food-info" onclick="openCustomize('${p.id}')" role="button" tabindex="0"><h3>${p.name}</h3><p class="food-desc">${p.desc}</p><div class="price">${money(p.price)}</div></div><div class="quantity">${count ? `<button class="qty-btn" aria-label="Decrease ${p.name}" onclick="menuQty('${p.id}',-1)">−</button><span class="qty-num">${count}</span><button class="qty-btn" aria-label="Increase ${p.name}" onclick="menuQty('${p.id}',1)">+</button>` : `<button class="btn btn-outline-gold" onclick="openCustomize('${p.id}')">Add</button>`}</div></article>`;
     }).join('') || '<div class="panel p-4 text-center muted">No items in this category.</div>';
