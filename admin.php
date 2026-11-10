@@ -1,6 +1,162 @@
-?php
+<?php
 session_start();
 require_once __DIR__ . '/config/db.php';
+
+// Ensure inventory_deducted tracking column exists in orders, kiosk_orders & website_orders tables
+try {
+    $pdo->exec("ALTER TABLE orders ADD COLUMN inventory_deducted INT DEFAULT 0");
+} catch (PDOException $e) {}
+try {
+    $pdo->exec("ALTER TABLE kiosk_orders ADD COLUMN inventory_deducted INT DEFAULT 0");
+} catch (PDOException $e) {}
+try {
+    $pdo->exec("ALTER TABLE website_orders ADD COLUMN inventory_deducted INT DEFAULT 0");
+} catch (PDOException $e) {}
+
+// Auto-deduct inventory for unprocessed POS, Kiosk, and Website orders upon admin page load/refresh
+try {
+    // 1. Process unprocessed POS orders
+    $unprocessedPos = $pdo->query("SELECT id FROM orders WHERE inventory_deducted = 0 OR inventory_deducted IS NULL");
+    while ($posOrder = $unprocessedPos->fetch(PDO::FETCH_ASSOC)) {
+        $orderId = $posOrder['id'];
+        $itemStmt = $pdo->prepare("SELECT item_name, quantity FROM order_items WHERE order_id = ?");
+        $itemStmt->execute([$orderId]);
+        $items = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($items as $item) {
+            deductInventoryForOrderedItem($pdo, $item['item_name'], $item['quantity']);
+        }
+
+        $pdo->prepare("UPDATE orders SET inventory_deducted = 1 WHERE id = ?")->execute([$orderId]);
+    }
+
+    // 2. Process unprocessed Kiosk orders
+    $unprocessedKiosk = $pdo->query("SELECT id FROM kiosk_orders WHERE inventory_deducted = 0 OR inventory_deducted IS NULL");
+    while ($kioskOrder = $unprocessedKiosk->fetch(PDO::FETCH_ASSOC)) {
+        $orderId = $kioskOrder['id'];
+        $itemStmt = $pdo->prepare("SELECT product_name, quantity FROM kiosk_order_items WHERE order_id = ?");
+        $itemStmt->execute([$orderId]);
+        $items = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($items as $item) {
+            deductInventoryForOrderedItem($pdo, $item['product_name'], $item['quantity']);
+        }
+
+        $pdo->prepare("UPDATE kiosk_orders SET inventory_deducted = 1 WHERE id = ?")->execute([$orderId]);
+    }
+
+    // 3. Process unprocessed Website orders
+    $unprocessedWeb = $pdo->query("SELECT id FROM website_orders WHERE inventory_deducted = 0 OR inventory_deducted IS NULL");
+    while ($webOrder = $unprocessedWeb->fetch(PDO::FETCH_ASSOC)) {
+        $orderId = $webOrder['id'];
+        $itemStmt = $pdo->prepare("SELECT item_name, quantity FROM website_order_items WHERE order_id = ?");
+        $itemStmt->execute([$orderId]);
+        $items = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($items as $item) {
+            deductInventoryForOrderedItem($pdo, $item['item_name'], $item['quantity']);
+        }
+
+        $pdo->prepare("UPDATE website_orders SET inventory_deducted = 1 WHERE id = ?")->execute([$orderId]);
+    }
+} catch (Exception $e) {
+    // Graceful handling
+}
+
+function deductInventoryForOrderedItem($pdo, $itemName, $qty) {
+    $nameLower = strtolower($itemName);
+    $reduce = function($invName, $amount) use ($pdo) {
+        $stmt = $pdo->prepare("UPDATE inventory_items SET stock = GREATEST(0, stock - ?) WHERE name LIKE ?");
+        $stmt->execute([$amount, '%' . $invName . '%']);
+    };
+
+    if (strpos($nameLower, 'tapsilog') !== false) {
+        $reduce('Tapa Portion', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'bagnet') !== false && strpos($nameLower, 'combo') === false && strpos($nameLower, 'tapa + bagnet') === false && strpos($nameLower, 'bagnet + hungarian') === false) {
+        $reduce('Pork Bagnet', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'sisigsilog') !== false || (strpos($nameLower, 'sisig') !== false && strpos($nameLower, 'combo') === false && strpos($nameLower, 'portion') === false && strpos($nameLower, 'sisig + hungarian') === false)) {
+        $reduce('Sisig Portion', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'liemposilog') !== false) {
+        $reduce('Porkchop Portion', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'malingsilog') !== false) {
+        $reduce('Maling', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'tocilog') !== false) {
+        $reduce('Tocino Portion', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'hungariansilog') !== false) {
+        $reduce('Hungarian Sausage', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'hotdog') !== false) {
+        $reduce('Hotdog', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'bagnet + hungarian') !== false) {
+        $reduce('Pork Bagnet', $qty);
+        $reduce('Hungarian Sausage', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'tapa + hungarian') !== false) {
+        $reduce('Tapa Portion', $qty);
+        $reduce('Hungarian Sausage', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'tapa + bagnet') !== false) {
+        $reduce('Tapa Portion', $qty);
+        $reduce('Pork Bagnet', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'liempo + hungarian') !== false) {
+        $reduce('Porkchop Portion', $qty);
+        $reduce('Hungarian Sausage', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'sisig + hungarian') !== false) {
+        $reduce('Sisig Portion', $qty);
+        $reduce('Hungarian Sausage', $qty);
+        $reduce('Garlic Rice', $qty);
+        $reduce('Eggs', $qty);
+        $reduce('Take-Out Boxes', $qty);
+    } elseif (strpos($nameLower, 'tapa portion') !== false || strpos($nameLower, 'special tapa') !== false) {
+        $reduce('Tapa Portion', $qty);
+    } elseif (strpos($nameLower, 'bagnet portion') !== false || strpos($nameLower, 'special bagnet') !== false) {
+        $reduce('Pork Bagnet', $qty);
+    } elseif (strpos($nameLower, 'sisig portion') !== false || strpos($nameLower, 'special sisig') !== false) {
+        $reduce('Sisig Portion', $qty);
+    } elseif (strpos($nameLower, 'hungarian portion') !== false || strpos($nameLower, 'hungarian sausage') !== false) {
+        $reduce('Hungarian Sausage', $qty);
+    } elseif (strpos($nameLower, 'garlic rice') !== false || strpos($nameLower, 'plain rice') !== false) {
+        $reduce('Garlic Rice', $qty);
+    } elseif (strpos($nameLower, 'egg') !== false) {
+        $reduce('Eggs', $qty);
+    } else {
+        $reduce($itemName, $qty);
+    }
+}
+
 
 // Ensure inventory_items table exists in MySQL database
 try {
@@ -228,7 +384,35 @@ try {
         .page-header { color: #ffc107; font-weight: 900; text-transform: uppercase; }
         .item-img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 8px; border: 1px solid #ffc107; }
         .search-box-container { background: rgba(0, 0, 0, 0.45); border: 2px solid #ffc107; border-radius: 12px; padding: 20px; margin-bottom: 25px; }
-        .search-input { background-color: #121212 !important; color: #ffc107 !important; border: 1px solid #ffc107 !important; font-weight: bold; }
+        /* White Text Visibility for Stocks Search Bar & Form Controls */
+        .search-input { 
+            background-color: #121212 !important; 
+            color: #ffffff !important; 
+            border: 1px solid #ffc107 !important; 
+            font-weight: bold; 
+        }
+
+        .search-input::placeholder,
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+
+        .form-control, 
+        .form-select {
+            color: #ffffff !important;
+        }
+
+        .form-control:focus, 
+        .form-select:focus {
+            color: #ffffff !important;
+            background-color: #1a1a1a !important;
+            border-color: #ffc107 !important;
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.5) !important;
+        }
+        /* Strictly targets ONLY the Current Stock numbers & unit text in the table */
+        td.font-monospace {
+            color: #ffffff !important;
+        }
         
         .filter-btn-group .btn {
             border-radius: 50px;
@@ -262,31 +446,6 @@ try {
         .table-custom td { border-color: rgba(255, 193, 7, 0.2); background-color: rgba(20, 20, 20, 0.5); }
         .badge-low-stock { background-color: #dc3545; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
         .badge-in-stock { background-color: #198754; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
-        .form-control, 
-        .form-select, 
-        .search-input {
-            background-color: #121212 !important;
-            color: #ffffff !important;
-            border: 1px solid #ffc107 !important;
-            font-weight: bold;
-        }
-
-/* Active focus state when clicking or typing inside input boxes */
-        .form-control:focus, 
-        .form-select:focus, 
-        .search-input:focus {
-            background-color: #1a1a1a !important;
-            color: #ffffff !important;
-            border-color: #ffc107 !important;
-            box-shadow: 0 0 10px rgba(255, 193, 7, 0.5) !important;
-        }
-
-/* Bright placeholder text styling */
-        .form-control::placeholder, 
-        .search-input::placeholder {
-            color: rgba(255, 255, 255, 0.75) !important;
-            opacity: 1 !important;
-        }
     </style>
 </head>
 <body>
